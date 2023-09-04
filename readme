@@ -1,0 +1,13 @@
+https://github.com/ssbandjl/fio.git
+
+
+
+engines/rados.c
+FIO_STATIC struct ioengine_ops ioengine
+
+
+daos engine
+engines/dfs.c
+dfs -> daos_fio_queue
+
+
