@@ -96,12 +96,33 @@ fio_backend(NULL) -> 核心函数
       ...
       cond_init_pshared(&td->verify_cond)
       fio_sem_up(startup_sem)
+      init_io_u(td) -> 初始化IO -> td->io_ops->io_u_init(td, io_u) -> static int fio_rados_io_u_init
+        fri = calloc(1, sizeof(*fri))
+        ...
       do_io(td, bytes_done) -> 执行IO
+        get_io_u(td) -> set_io_u_file -> get_next_file(td) -> td_io_open_file -> td->io_ops->open_file(td, f) -> static int fio_rados_open
+          return 0 -> 空实现
         io_u_submit(td, io_u)
           td_io_queue(td, io_u)
             ret = td->io_ops->queue(td, io_u) -> static enum fio_q_status fio_rados_queue -> IO入队(下发IO)
               rados_aio_create_completion
               rados_aio_write | rados_aio_read | rados_create_write_op + rados_write_op_zero + rados_aio_write_op_operate
+        wait_for_completions(td, &comp_time) -> io_u_queued_complete -> td_io_getevents -> td->io_ops->getevents(td, min, max, t) -> int fio_rados_getevents -> 获取IO完成事件
+          rados_aio_is_complete
+          rados_aio_release
+          .. ios_completed(td, &icd) -> fio_rados_event -> aio事件
+            return rados->aio_events[event]
+      cleanup_io_u(td)
+         td->io_ops->io_u_free(td, io_u) -> static void fio_rados_io_u_free
+            rados_aio_release
+            rados_release_write_op
+      close_ioengine(td)
+        td->io_ops->cleanup(td) -> static void fio_rados_cleanup
+          _fio_rados_rm_objects
+            rados_remove
+          _fio_rados_disconnect
+            rados_ioctx_destroy
+            rados_shutdown
   helper_thread_exit()
 fio_server_destroy_sk_key
 deinitialize_fio
