@@ -1,5 +1,12 @@
 https://github.com/ssbandjl/fio.git
-使用手册: fio/HOWTO.rst
+使用手册: fio/HOWTO.rst, https://fio.readthedocs.io/en/latest/fio_doc.html
+
+
+源码分析:
+fio架构
+fio主要分为job管理、ioengine引擎和数据收集等模块，其中ioengine是fio的核心。 fio ioengine采用类似于vfs(虚拟文件系统)的架构，即定义一组公共的操作方法（ioengineops），具体的ioengine可以通过实现ioengineops等指定接口，插入到fio框架中，并得以成功执行,参考:
+https://www.mtyun.com/library/fio-introduction
+
 
 
 带rados插件编译fio
@@ -7,9 +14,9 @@ make
 
 /home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -iodepth=16 -size=128m -nr_files=5
 
-/home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -iodepth=16 -size=128m -nr_files=5
+/home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -size=4m -numjobs=1
 
-gdb --args /home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -iodepth=16 -size=128m -nr_files=5
+gdb --args /home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -size=4m -numjobs=1
 
 
 
@@ -21,5 +28,82 @@ FIO_STATIC struct ioengine_ops ioengine
 daos engine
 engines/dfs.c
 dfs -> daos_fio_queue
+
+
+
+所有线程:
+(gdb) info threads
+  Id   Target Id         Frame 
+* 85   Thread 0x7fffc2ff5700 (LWP 227106) "fio" thread_main (data=0x7b1e20) at backend.c:1638
+  84   Thread 0x7fffc37f6700 (LWP 227105) "fn-radosclient" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  83   Thread 0x7fffc3ff7700 (LWP 227104) "safe_timer" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  82   Thread 0x7fffc47f8700 (LWP 227103) "safe_timer" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  81   Thread 0x7fffc4ff9700 (LWP 227102) "fn_anonymous" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  80   Thread 0x7fffc57fa700 (LWP 227101) "safe_timer" 0x00007fffec1747ca in std::map<std::string, mon_info_t, std::less<std::string>, std::allocator<std::pair<std::string const, mon_info_t> > >::count (this=0x6d7a80, 
+    __x=<error reading variable: Cannot access memory at address 0xffffffffffffffea>) at /opt/rh/devtoolset-11/root/usr/include/c++/11/bits/stl_map.h:1215
+  79   Thread 0x7fffc5ffb700 (LWP 227100) "ms_local" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  78   Thread 0x7fffc67fc700 (LWP 227099) "ms_dispatch" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  77   Thread 0x7fffc6ffd700 (LWP 227098) "fio" 0x00007ffff77acde2 in pthread_cond_timedwait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  76   Thread 0x7fffc77fe700 (LWP 227097) "admin_socket" 0x00007ffff53f3ddd in poll () from /lib64/libc.so.6
+  75   Thread 0x7fffc7fff700 (LWP 227096) "service" 0x00007ffff77acde2 in pthread_cond_timedwait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  70   Thread 0x7fffdcc8a700 (LWP 227091) "msgr-worker-2" 0x00007ffff77af54d in __lll_lock_wait () from /lib64/libpthread.so.0
+  69   Thread 0x7fffbf5b4700 (LWP 227090) "msgr-worker-1" 0x00007ffff77af54d in __lll_lock_wait () from /lib64/libpthread.so.0
+  68   Thread 0x7fffbedb3700 (LWP 227089) "msgr-worker-0" 0x00007ffff77af54d in __lll_lock_wait () from /lib64/libpthread.so.0
+  67   Thread 0x7fffbe5b2700 (LWP 227088) "log" 0x00007ffff77aca35 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+  66   Thread 0x7fffbddb1700 (LWP 227087) "fio" 0x00007ffff53f5b43 in select () from /lib64/libc.so.6
+  1    Thread 0x7ffff7fd3940 (LWP 227022) "fio" 0x000000000046cc15 in run_threads (sk_out=sk_out@entry=0x0) at backend.c:2481
+
+
+io入队调用栈:
+#0  fio_rados_queue (td=0x7fffdd6ec000, io_u=0x7fff90000940) at engines/rados.c:286
+#1  0x000000000041edb4 in td_io_queue (td=td@entry=0x7fffdd6ec000, io_u=io_u@entry=0x7fff90000940) at ioengines.c:388
+#2  0x000000000046ac80 in io_u_submit (io_u=0x7fff90000940, td=0x7fffdd6ec000) at backend.c:603
+#3  do_io (bytes_done=0x7fffc2ff1bc0, td=0x7fffdd6ec000) at backend.c:1114
+#4  thread_main (data=<optimized out>) at backend.c:1903
+#5  0x00007ffff77a8ea5 in start_thread () from /lib64/libpthread.so.0
+#6  0x00007ffff53feb0d in clone () from /lib64/libc.so.6
+
+
+gdb --args /home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -size=4m -numjobs=1
+main
+initialize_fio
+fio_server_create_sk_key
+parse_options
+fio_time_init -> 添加对 x86 上不变 TSC 的检查，如果可靠，则使用 TSC 作为默认时钟，TSC 是迄今为止我们可以使用的最快时钟。 检查 CPUID 位是否是恒定速率且跨内核同步。 如果是，我们可以将其用作默认时钟源。 如果作业文件中没有使用 Clocksource= 特别指定其他时钟源，Fio 将在 x86 上默认使用此时钟源
+  fio_clock_init -> 检查nanosleep函数的粒度
+  fio_monotonic_clocktest -> for (i = 0; i < nr_cpus; i++)
+    pthread_create(&t->thread, NULL, clock_thread_fn, t)
+fio_backend(NULL) -> 核心函数
+  init_global_dedupe_working_set_seeds -> 初始化全局重复数据删除工作集。 这需要在所有作业的种子初始化后调用
+  stat_init
+  helper_thread_create(startup_sem, sk_out)
+  run_threads(sk_out)
+    if (setup_files(td)) -> td->io_ops->setup(td) -> fio_rados_setup -> _fio_rados_connect(td)
+      rados_create2
+      rados_conf_read_file
+      rados_connect
+      rados_ioctx_create
+      rados_write(rados->io_ctx, f->file_name, "", 0, 0) -> ceph_rados.0.0
+      ...
+      td_restore_runstate(td, old_state) -> zbd：支持区域粒度的“z”后缀, 允许用户传递一些具有区域粒度的选项，这是很自然的适用于 ZBD 工作负载
+    fio_idle_prof_start()
+    set_genesis_time()
+    if (waitee_running(td))
+    pthread_create(&td->thread, NULL, thread_main, fd) -> static void *thread_main(void *data) -> 启动主线程
+      td->pid = gettid()
+      fio_local_clock_init()
+      INIT_FLIST_HEAD(&td->io_log_list);
+      ...
+      cond_init_pshared(&td->verify_cond)
+      fio_sem_up(startup_sem)
+      do_io(td, bytes_done) -> 执行IO
+        io_u_submit(td, io_u)
+          td_io_queue(td, io_u)
+            ret = td->io_ops->queue(td, io_u) -> static enum fio_q_status fio_rados_queue -> IO入队(下发IO)
+              rados_aio_create_completion
+              rados_aio_write | rados_aio_read | rados_create_write_op + rados_write_op_zero + rados_aio_write_op_operate
+  helper_thread_exit()
+fio_server_destroy_sk_key
+deinitialize_fio
 
 
