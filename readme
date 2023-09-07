@@ -1,4 +1,16 @@
 https://github.com/ssbandjl/fio.git
+使用手册: fio/HOWTO.rst
+
+
+带rados插件编译fio
+make
+
+/home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -iodepth=16 -size=128m -nr_files=5
+
+/home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -iodepth=16 -size=128m -nr_files=5
+
+gdb --args /home/xb/project/ceph/xb/ceph/fio/fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randwrite -clustername=admin -clientname=admin -conf=/home/xb/project/ceph/xb/ceph/build/ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -iodepth=16 -size=128m -nr_files=5
+
 
 
 
