@@ -106,7 +106,7 @@ fio_backend(NULL) -> 核心函数
           td_io_queue(td, io_u)
             ret = td->io_ops->queue(td, io_u) -> static enum fio_q_status fio_rados_queue -> IO入队(下发IO)
               rados_aio_create_completion
-              rados_aio_write | rados_aio_read | rados_create_write_op + rados_write_op_zero + rados_aio_write_op_operate
+              rados_aio_write 异步写 | rados_aio_read 异步读 | 修剪 rados_create_write_op + rados_write_op_zero + rados_aio_write_op_operate
         wait_for_completions(td, &comp_time) -> io_u_queued_complete -> td_io_getevents -> td->io_ops->getevents(td, min, max, t) -> int fio_rados_getevents -> 获取IO完成事件
           rados_aio_is_complete
           rados_aio_release
@@ -122,7 +122,7 @@ fio_backend(NULL) -> 核心函数
             rados_remove
           _fio_rados_disconnect
             rados_ioctx_destroy
-            rados_shutdown
+            
   helper_thread_exit()
 fio_server_destroy_sk_key
 deinitialize_fio
