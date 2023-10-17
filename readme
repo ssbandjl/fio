@@ -128,3 +128,11 @@ fio_server_destroy_sk_key
 deinitialize_fio
 
 
+rados引擎: .name = "rados"
+操作类型: DDIR_TRIM | DDIR_READ | DDIR_WRITE
+
+
+
+fio -name=ceph_rados -ioengine=rados -bs=4k -rw=randread -clustername=admin -clientname=admin -conf=ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -size=4m -numjobs=1
+
+fio -name=ceph_rados -ioengine=rados -bs=4k -rw=trim -clustername=admin -clientname=admin -conf=ceph.conf -busy_poll=1 -touch_objects=1 -pool=p1 -size=4m -numjobs=1
